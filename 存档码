@@ -1,0 +1,82 @@
+class CryptoExtension {
+    getInfo() {
+        return {
+            id: 'dualCrypto',
+            name: '双重加密',
+            color1: '#32CD32',
+            blocks: [
+                {
+                    opcode: 'encrypt',
+                    blockType: Scratch.BlockType.REPORTER,
+                    text: '加密 [INPUT] 为Base64二进制',
+                    arguments: {
+                        INPUT: {
+                            type: Scratch.ArgumentType.STRING,
+                            defaultValue: 'Hello'
+                        }
+                    }
+                },
+                {
+                    opcode: 'decrypt',
+                    blockType: Scratch.BlockType.REPORTER,
+                    text: '解密Base64二进制 [BINARY] 为字符串',
+                    arguments: {
+                        BINARY: {
+                            type: Scratch.ArgumentType.STRING,
+                            defaultValue: '010100110110011101101110010000100111001101100110'
+                        }
+                    }
+                }
+            ]
+        };
+    }
+
+    encrypt(args) {
+        try {
+            // 处理Unicode字符
+            const uriEncoded = encodeURIComponent(args.INPUT);
+            // Base64编码
+            const base64 = btoa(uriEncoded);
+            // 转二进制字符串
+            return this._stringToBinary(base64);
+        } catch {
+            return '';
+        }
+    }
+
+    decrypt(args) {
+        try {
+            // 二进制转Base64
+            const base64 = this._binaryToString(args.BINARY);
+            // Base64解码
+            const uriDecoded = atob(base64);
+            // 还原Unicode
+            return decodeURIComponent(uriDecoded);
+        } catch {
+            return '解密失败';
+        }
+    }
+
+    // 字符串 -> 二进制字符串 (带补位)
+    _stringToBinary(str) {
+        return str.split('').map(char => {
+            return char.charCodeAt(0)
+                .toString(2)
+                .padStart(8, '0');
+        }).join('');
+    }
+
+    // 二进制字符串 -> 原始字符串 (自动清理无效字符)
+    _binaryToString(binary) {
+        return binary.replace(/[^01]/g, '') // 过滤非法字符
+            .match(/.{1,8}/g) // 按8位分组
+            .map(byte => {
+                return String.fromCharCode(
+                    parseInt(byte.padEnd(8, '0'), 2)
+                );
+            })
+            .join('');
+    }
+}
+
+Scratch.extensions.register(new CryptoExtension());
